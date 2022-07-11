@@ -1,0 +1,43 @@
+cluster_name = "kube-cluster"
+
+# Resource Group
+azurerm_resource_group  = "cloud-shell-storage-westeurope"
+resource_group_location = "westeurope"
+environment = "cks"
+
+# Storage Account
+# account_tier             = "Standard"
+# account_replication_type = "LRS"
+
+# virtual network
+cidr_block = "10.10.0.0/16"
+subnet_1   = "10.10.10.0/24"
+subnet_2   = "10.10.20.0/24"
+
+# Compute Engine
+# az vm image list --all --publisher canonical
+# az vm image show --location westeurope \
+# --urn Canonical:0001-com-ubuntu-server-focal:20_04-LTS:latest 
+# available disk sizes
+# https://azuremarketplace.microsoft.com/en-gb/marketplace/apps/canonical.0001-com-ubuntu-pro-focal?tab=PlansAndPrice
+# https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-b-series-burstable
+vm_count             = "2"
+size_of_disk         = "Standard_B1s" # min "Standard_B2s" recommended for production
+disk_name            = "ubuntu-disk"
+storage_account_type = "Standard_LRS"
+master_node          = "controller-plane"
+worker_node          = "worker-node"
+admin_username       = "azureuser"
+
+# Ubuntu 18.04
+# image_publisher = "Canonical"
+# image_offer     = "UbuntuServer"
+# image_sku       = "18_04-lts-gen2"
+# image_version   = "18.04.202204010"
+
+# Ubuntu 20.04
+image_publisher = "Canonical"
+image_offer     = "0001-com-ubuntu-server-focal"
+image_sku       = "20_04-LTS"
+image_version   = "latest"
+

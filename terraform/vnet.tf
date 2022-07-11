@@ -1,61 +1,50 @@
 # Create a virtual network within the resource group
 # az network vnet create -g resource_group_name -n name --address-prefix cidr_block
-resource "azurerm_virtual_network" "ubuntu" {
-  name                = "ubuntu-network"
-  resource_group_name = var.azurerm_resource_group
-  location            = var.resource_group_location
+resource "azurerm_virtual_network" "ubuntu-vnet" {
+  name                = "ubuntu-vnet"
+  resource_group_name = azurerm_resource_group.ubuntu-rg.name
+  location            = azurerm_resource_group.ubuntu-rg.location
   address_space       = [var.cidr_block]
 
-  # subnet {
-  #   name           = "subnet1"
-  #   address_prefix = var.subnet_1
-  #   security_group = azurerm_network_security_group.ubuntu.id
-  # }
-
-  # subnet {
-  #   name           = "subnet2"
-  #   address_prefix = var.subnet_2
-  #   security_group = azurerm_network_security_group.ubuntu.id
-  # }
-
-  # tags = {
-  #   environment = "testing"
-  # }
+  tags = {
+    environment = var.environment
+  }
 }
 
 # Create subnets
 # az network vnet subnet create -g $rg --vnet-name $vnet -n $subnet \
 # --address-prefixes $subnetaddressprefix --network-security-group $nsg
-resource "azurerm_subnet" "ubuntu1" {
-  name                 = "subnet1"
-  resource_group_name  = var.azurerm_resource_group
-  virtual_network_name = azurerm_virtual_network.ubuntu.name
+resource "azurerm_subnet" "ubuntu-subnet1" {
+  name                 = "ubuntu-subnet1"
+  resource_group_name  = azurerm_resource_group.ubuntu-rg.name
+  virtual_network_name = azurerm_virtual_network.ubuntu-vnet.name
   address_prefixes     = [var.subnet_1]
 }
 
-# resource "azurerm_subnet" "ubuntu2" {
-#   name                 = "subnet2"
-#   resource_group_name  = var.azurerm_resource_group
-#   virtual_network_name = azurerm_virtual_network.ubuntu.name
+# Optional
+# resource "azurerm_subnet" "ubuntu-subnet2" {
+#   name                 = "ubuntu-subnet2"
+#   resource_group_name  = azurerm_resource_group.ubuntu-rg.name
+#   virtual_network_name = azurerm_virtual_network.ubuntu-vnet.name
 #   address_prefixes     = [var.subnet_2]
 # }
 
 # Create public IPs
 # az network public-ip create -n $clientpip -g $rg
-resource "azurerm_public_ip" "ubuntu" {
+resource "azurerm_public_ip" "ubuntu-pip" {
   count               = var.vm_count
   name                = "ubuntu-public-ip-0${count.index}"
-  location            = var.resource_group_location
-  resource_group_name = var.azurerm_resource_group
+  location            = azurerm_resource_group.ubuntu-rg.location
+  resource_group_name = azurerm_resource_group.ubuntu-rg.name
   allocation_method   = "Dynamic"
 }
 
 # Create Network Security Group and rule
 # az network nsg create -g $rg -n $nsg
-resource "azurerm_network_security_group" "ubuntu" {
+resource "azurerm_network_security_group" "ubuntu-sg" {
   name                = "ubuntu-security-group"
-  location            = var.resource_group_location
-  resource_group_name = var.azurerm_resource_group
+  location            = azurerm_resource_group.ubuntu-rg.location
+  resource_group_name = azurerm_resource_group.ubuntu-rg.name
 
   # az network nsg rule create -g $rg -n SSH --access allow \
   # --destination-address-prefixes '*' --destination-port-range 22 \
@@ -90,28 +79,29 @@ resource "azurerm_network_security_group" "ubuntu" {
   }
 }
 
-# Create network interface
+# Create network interface - component which holds the Public IP and the private IP of the VM.
+# NIC connects VM to the VNet
 # az network nic create -g $rg -n $clientnic --private-ip-address $clientvmprivateip \
 # --public-ip-address $clientpip --vnet $vnet --subnet $subnet --ip-forwarding
-resource "azurerm_network_interface" "ubuntu" {
+resource "azurerm_network_interface" "ubuntu-ni" {
   count               = var.vm_count
   name                = "ubuntu-ni-${count.index}"
-  location            = var.resource_group_location
-  resource_group_name = var.azurerm_resource_group
+  location            = azurerm_resource_group.ubuntu-rg.location
+  resource_group_name = azurerm_resource_group.ubuntu-rg.name
 
   ip_configuration {
     name = "ubuntu-ni-configuration"
     # subnet_id = azurerm_virtual_network.ubuntu.subnet.id
-    subnet_id                     = azurerm_subnet.ubuntu1.id
+    subnet_id                     = azurerm_subnet.ubuntu-subnet1.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = element(azurerm_public_ip.ubuntu.*.id, count.index)
-    # public_ip_address_id          = azurerm_public_ip.ubuntu.id
+    public_ip_address_id          = element(azurerm_public_ip.ubuntu-pip.*.id, count.index)
+    # public_ip_address_id          = azurerm_public_ip.ubuntu-pip.id
   }
 }
 
 # Connect the security group to the network interface
-resource "azurerm_network_interface_security_group_association" "ubuntu" {
+resource "azurerm_network_interface_security_group_association" "ubuntu-ni-sga" {
   count                     = var.vm_count
-  network_interface_id      = element(azurerm_network_interface.ubuntu.*.id, count.index)
-  network_security_group_id = azurerm_network_security_group.ubuntu.id
+  network_interface_id      = element(azurerm_network_interface.ubuntu-ni.*.id, count.index)
+  network_security_group_id = azurerm_network_security_group.ubuntu-sg.id
 }

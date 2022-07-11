@@ -13,6 +13,11 @@ variable "resource_group_location" {
   type        = string
 }
 
+variable "environment" {
+  description = "environment as a tag"
+  type        = string
+}
+
 variable "cidr_block" {
   description = "The CIDR block to use for the virtual network."
   type        = string
@@ -63,10 +68,16 @@ variable "vm_count" {
   default     = "1"
 }
 
-variable "computer_name" {
-  description = "The name of the computer to use for the virtual machine."
+variable "master_node" {
+  description = "The name of the node which is the Kubernetes controller plane"
   type        = string
-  default     = "ubuntu-vm"
+  default     = "master-node"
+}
+
+variable "worker_node" {
+  description = "The name of the node which is Kubernetes worker node"
+  type        = string
+  default     = "worker-node"
 }
 
 variable "admin_username" {

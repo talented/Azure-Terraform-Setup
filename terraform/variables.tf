@@ -28,10 +28,10 @@ variable "subnet_1" {
   type        = string
 }
 
-variable "subnet_2" {
-  description = "The name of the second subnet."
-  type        = string
-}
+# variable "subnet_2" {
+#   description = "The name of the second subnet."
+#   type        = string
+# }
 
 variable "account_tier" {
   description = "The tier of the storage account to create."
